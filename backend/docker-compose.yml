@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: stellar-postgres
+    environment:
+      POSTGRES_DB: stellar
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: stellar-backend
+    depends_on:
+      - db
+    environment:
+      - ENCRYPTION_KEY=32bytesrandomkeyaqui1234567890abcdef12345678
+      - JWT_SECRET=supersecretjwtkeyaqui1234567890abcdef12345678
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+    command: npm run start:dev
+
+volumes:
+  postgres_data:
