@@ -1,28 +1,16 @@
-// src/users/users.controller.ts
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  Req,
-  UseGuards,
-  Get,
-} from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Post, Body, Get, Req, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './create-user.dto';
+import { LoginDto } from '../auth/login.dto'; // se quiser, mas usamos no auth
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post('signup')                    // POST /users/signup
-  @HttpCode(HttpStatus.CREATED)
+  @Post('signup')
   async create(@Body() createUserDto: CreateUserDto) {
     const user = await this.usersService.create(createUserDto);
-
-    // Nunca devolvemos a secret key!
     return {
       id: user.id,
       email: user.email,
@@ -32,9 +20,9 @@ export class UsersController {
   }
 
   @Get('me')
-  @UseGuards(AuthGuard('jwt'))
-  async getMe(@Req() req: { user: { userId: number; email: string } }) {
-    const user = await this.usersService.findById(Number(req.user.userId));
+  @UseGuards(JwtAuthGuard)
+  async getMe(@Req() req: any) {
+    const user = await this.usersService.findById(req.user.userId);
     return {
       id: user?.id,
       email: user?.email,

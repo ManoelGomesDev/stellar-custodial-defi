@@ -1,10 +1,10 @@
 // src/users/users.service.ts
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateUserDto } from './create-user.dto';
-import { WalletService } from '../wallet/wallet.service'; // nossa abstração!
+import { WalletService } from '../wallet/wallet.service';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -13,7 +13,8 @@ export class UsersService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
 
-    private walletService: WalletService, // injetamos nossa wallet
+    @Inject(forwardRef(() => WalletService))
+    private walletService: WalletService,
   ) {}
 
   // Cria usuário + wallet automaticamente
@@ -52,5 +53,13 @@ export class UsersService {
   // Busca por ID (para proteger rotas)
   async findById(id: number): Promise<User | null> {
     return this.usersRepository.findOne({ where: { id } });
+  }
+
+  // Busca por ID incluindo o secret encriptado (para operações de wallet)
+  async findByIdWithSecret(id: number): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { id },
+      select: ['id', 'email', 'stellarPublicKey', 'encryptedStellarSecret'],
+    });
   }
 }
